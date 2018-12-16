@@ -1,0 +1,367 @@
+
+typedef struct BiTreeNode
+{
+	int data;
+	struct BiTreeNode *lchild,*rchild;	
+	struct BiTreeNode *parent;
+}BiTreeNode;
+
+typedef struct PtrNode
+{
+	BiTreeNode *treeptr;
+	struct PtrNode *next;
+}PtrNode;
+
+typedef struct Stack
+{
+	PtrNode*top;
+}Stack;
+
+typedef struct HuffmanTree
+{
+	BiTreeNode* root;
+	BiTreeNode** leaves;
+	char** HuffmanCode;
+}HuffmanTree;
+
+typedef struct FileString
+{
+	char *Filestring;
+	char *Character;
+	int *Frequency;
+	int Number;
+	int Type;
+	HuffmanTree* Tree;
+}FileString;
+
+struct FileString g_FileStringmgr;
+void PreOrderTraversal(BiTreeNode *T)
+{
+	if(T!=NULL)
+	{
+		printf("%d",T->data);
+		printf("\n");
+		PreOrderTraversal(T->lchild);
+		PreOrderTraversal(T->rchild);
+		return;
+	}
+	else
+	{
+		return;
+	}
+}
+
+void InOrderTraversal(BiTreeNode *T)
+{
+	if(T!=NULL)
+	{
+		InOrderTraversal(T->lchild);
+		printf("%d",T->data);
+		printf("\n");
+		InOrderTraversal(T->rchild);
+		return;
+	}
+	else
+	{
+		return;
+	}
+}
+
+void PostOrderTraversal(BiTreeNode *T)
+{
+	if(T!=NULL)
+	{
+		PostOrderTraversal(T->lchild);
+		PostOrderTraversal(T->rchild);
+		printf("%d",T->data);
+		printf("\n");
+	}
+	else
+	{
+		return;
+	}
+}
+
+HuffmanTree* HuffmanDecode(int a[],int number)
+{
+	HuffmanTree* Treeptr;
+	Treeptr=(HuffmanTree *)malloc(sizeof(HuffmanTree));
+	BiTreeNode **T1;
+	T1=(BiTreeNode **)malloc(number*sizeof(BiTreeNode));
+    BiTreeNode *TmpNode;
+	for(int firstcount=0;firstcount<number;firstcount++)
+	{
+		T1[firstcount]=(BiTreeNode *)malloc(sizeof(BiTreeNode));
+		T1[firstcount]->data=a[firstcount];
+		T1[firstcount]->lchild=NULL;
+		T1[firstcount]->rchild=NULL;
+		T1[firstcount]->parent=NULL;
+	}
+	Treeptr->leaves=(BiTreeNode **)malloc(number*sizeof(BiTreeNode));
+	for(int firstcount=0;firstcount<number;firstcount++)
+	{
+		Treeptr->leaves[firstcount]=T1[firstcount];
+	}
+	for(int count=0;count<number-1;count++)
+	{
+		for(int firstcount=count;firstcount<number;firstcount++)
+		{
+			for(int secondcount=number-1;secondcount>firstcount;secondcount--)
+			{
+				if(T1[secondcount-1]->data>T1[secondcount]->data)
+				{
+					BiTreeNode *tmpptr;
+					tmpptr=T1[secondcount-1];
+					T1[secondcount-1]=T1[secondcount];
+					T1[secondcount]=tmpptr;
+				}
+			}
+		}
+		TmpNode=(BiTreeNode *)malloc(sizeof(BiTreeNode));
+		TmpNode->data=T1[count]->data+T1[count+1]->data;
+		TmpNode->lchild=T1[count];
+		TmpNode->rchild=T1[count+1];
+		TmpNode->parent=NULL;
+		T1[count]->parent=T1[count+1]->parent=TmpNode;
+		T1[count]=NULL;
+		T1[count+1]=TmpNode;
+	}
+	free(T1);
+	Treeptr->root=TmpNode;
+	Treeptr->HuffmanCode=(char **)malloc(sizeof(char *)*number);
+	char*tmp;
+	tmp=(char*)malloc(sizeof(char)*200);
+	int codelength=0;
+	BiTreeNode *Tmpptr;
+	for(int count=0;count<number;count++)
+	{
+		Tmpptr=Treeptr->leaves[count];
+		while(Tmpptr!=Treeptr->root)
+		{
+			if(Tmpptr==(Tmpptr->parent)->lchild)
+			{
+				tmp[codelength++]='0';
+			}
+			if(Tmpptr==(Tmpptr->parent)->rchild)
+			{
+				tmp[codelength++]='1';
+			}
+			Tmpptr=Tmpptr->parent;
+		}
+		Treeptr->HuffmanCode[count]=(char*)malloc(sizeof(char)*(codelength+1));//每个编码最后一位置0
+        Treeptr->HuffmanCode[count][codelength]=0;
+		for(int codecount=0;codecount<codelength;codecount++)
+		{
+			Treeptr->HuffmanCode[count][codecount]=tmp[codelength-codecount-1];
+		}
+		codelength=0;
+	}
+	free(tmp);
+	return Treeptr;
+}
+
+void InputExampleFile(const char* filePath)
+{
+	FILE *fp=NULL;
+	char *buf;
+	buf=(char *)malloc(1000*sizeof(char));
+	fp=fopen(filePath,"r");
+	if(fp==NULL)
+	{
+		printf("failed to open");
+	}
+	else
+	{
+		fgets(buf,1000,fp);
+	}
+	for(g_FileStringmgr.Number=0;buf[g_FileStringmgr.Number]!=0;g_FileStringmgr.Number++);
+	g_FileStringmgr.Filestring=(char *)malloc(sizeof(char)*(g_FileStringmgr.Number+1));
+	for(int count=0;count<g_FileStringmgr.Number;count++)
+	{
+		g_FileStringmgr.Filestring[count]=buf[count];
+	}
+	g_FileStringmgr.Filestring[g_FileStringmgr.Number]=0;
+	free(buf);
+	g_FileStringmgr.Type=0;
+	char *tmp;
+	bool judge;
+	tmp=(char *)malloc(1000*sizeof(char));
+	for(int count=0;count<g_FileStringmgr.Number;count++)
+	{
+		judge=1;
+		for(int secondcount=0;secondcount<count;secondcount++)
+		{
+			if(g_FileStringmgr.Filestring[count]==g_FileStringmgr.Filestring[secondcount])
+			{
+				judge=0;
+			}
+		}
+		if(judge==1)
+		{
+			tmp[g_FileStringmgr.Type++]=g_FileStringmgr.Filestring[count];
+		}
+	}
+	g_FileStringmgr.Character=(char*)malloc(g_FileStringmgr.Type*sizeof(char));
+	for(int count=0;count<g_FileStringmgr.Type;count++)
+	{
+		g_FileStringmgr.Character[count]=tmp[count];
+	}
+	g_FileStringmgr.Character[g_FileStringmgr.Type]=0;
+	free(tmp);
+	g_FileStringmgr.Frequency=(int*)malloc(sizeof(int)*g_FileStringmgr.Type);
+	for(int count=0;count<g_FileStringmgr.Type;count++)
+	{
+		g_FileStringmgr.Frequency[count]=0;
+		for(int secondcount=0;secondcount<g_FileStringmgr.Number;secondcount++)
+		{
+			if(g_FileStringmgr.Filestring[secondcount]==g_FileStringmgr.Character[count])
+			{
+				g_FileStringmgr.Frequency[count]++;
+			}
+		}
+	}
+    g_FileStringmgr.Tree=HuffmanDecode(g_FileStringmgr.Frequency,g_FileStringmgr.Type);
+	return;
+}
+
+void InitStack(Stack &S)
+{
+	S.top=NULL;
+	return;
+}
+void push(Stack &S,BiTreeNode *ptr)
+{
+	if(S.top==NULL)
+	{
+		S.top=(PtrNode*)malloc(sizeof(PtrNode));
+		S.top->treeptr=ptr;
+		S.top->next=NULL;
+		return;
+	}
+	else
+	{
+		PtrNode *tmp;
+		tmp=(PtrNode*)malloc(sizeof(PtrNode));
+		tmp->treeptr=ptr;
+		tmp->next=S.top;
+		S.top=tmp;
+		return;
+	}
+}
+
+bool pop(Stack &S,BiTreeNode* &ptr)
+{
+	if(S.top==NULL)
+	{
+		return false;
+	}
+	else
+	{
+		ptr=S.top->treeptr;
+		PtrNode *tmp;
+		tmp=S.top->next;
+		free(S.top);
+		S.top=tmp;
+		return true;
+	}
+}
+
+bool GetTop(Stack &S,BiTreeNode* &ptr)
+{
+	if(S.top==NULL)
+	{
+		return false;
+	}
+	else
+	{
+		ptr=S.top->treeptr;
+		return true;
+	}
+}
+
+void PreOrderTraversalByStack(BiTreeNode *root)
+{
+	Stack S;
+	InitStack(S);
+	push(S,root);
+	BiTreeNode *tmp=NULL;
+	tmp=(BiTreeNode *)malloc(sizeof(BiTreeNode));
+	while(S.top!=NULL)
+	{
+		pop(S,tmp);
+		cout<<tmp->data<<endl;
+		if(tmp->rchild!=NULL)
+		{
+			push(S,tmp->rchild);
+		}
+		if(tmp->lchild!=NULL)
+		{
+			push(S,tmp->lchild);
+		}
+	}
+	return;
+}
+
+void InOrderTraversalByStack(BiTreeNode *root)
+{
+	Stack S;
+	InitStack(S);
+	BiTreeNode *tmp=NULL;
+	tmp=(BiTreeNode *)malloc(sizeof(BiTreeNode));
+	push(S,root);
+	while(S.top!=NULL)
+	{
+	while(GetTop(S,tmp)&&tmp->lchild!=NULL)
+	{
+		push(S,tmp->lchild);
+	}
+	pop(S,tmp);
+	cout<<tmp->data<<endl;
+	if(S.top==NULL)
+	{
+		break;
+	}
+	while(tmp->rchild==NULL)
+	{
+		pop(S,tmp);
+		cout<<tmp->data<<endl;
+	}
+	push(S,tmp->rchild);
+	}
+}
+
+void PostOrderTraversalByStack(BiTreeNode *root)
+{
+	Stack(S);
+	InitStack(S);
+	BiTreeNode *tmp;
+	tmp=(BiTreeNode *)(malloc(sizeof(BiTreeNode)));
+	push(S,root);
+	while(S.top!=NULL)
+	{
+		while(GetTop(S,tmp)&&(tmp->lchild)!=NULL)
+		{
+			push(S,tmp->lchild);
+		}
+		if(tmp->rchild!=NULL)
+		{
+			push(S,tmp->rchild);
+			continue;
+		}
+		else
+		{
+			pop(S,tmp);
+			cout<<tmp->data<<endl;
+			while((tmp==(tmp->parent)->rchild)||((tmp==(tmp->parent)->lchild)&&(tmp->parent)->rchild==NULL))
+			{
+				pop(S,tmp);
+				cout<<tmp->data<<endl;
+				if(S.top==NULL)
+				{
+					return;
+				}
+			}
+			push(S,(tmp->parent)->rchild);
+		}
+	}
+}
