@@ -1,3 +1,18 @@
+#define HomeWorkAPI extern "C" __declspec(dllexport)
+#include<string>
+
+typedef struct StudentNode
+{
+	char name[16];
+	char id[16];
+	short score;
+}StudentNode;
+
+typedef struct StudentPtr
+{
+	struct StudentNode student;
+	struct StudentPtr *NextAddr;
+}StudentPtr;
 
 typedef struct BiTreeNode
 {
@@ -5,17 +20,6 @@ typedef struct BiTreeNode
 	struct BiTreeNode *lchild,*rchild;	
 	struct BiTreeNode *parent;
 }BiTreeNode;
-
-typedef struct PtrNode
-{
-	BiTreeNode *treeptr;
-	struct PtrNode *next;
-}PtrNode;
-
-typedef struct Stack
-{
-	PtrNode*top;
-}Stack;
 
 typedef struct HuffmanTree
 {
@@ -31,56 +35,53 @@ typedef struct FileString
 	int *Frequency;
 	int Number;
 	int Type;
-	HuffmanTree* Tree;
+	HuffmanTree *Tree;
 }FileString;
 
-struct FileString g_FileStringmgr;
-void PreOrderTraversal(BiTreeNode *T)
+FileString g_FileStringmgr;
+typedef struct SeqStudentListByPtr
 {
-	if(T!=NULL)
-	{
-		printf("%d",T->data);
-		printf("\n");
-		PreOrderTraversal(T->lchild);
-		PreOrderTraversal(T->rchild);
-		return;
-	}
-	else
-	{
-		return;
-	}
+	struct StudentNode* student;
+	int count;
+}SeqStudentLIstByPtr;
+const char* myName = "贺博文";
+
+HomeWorkAPI const char* GetName()
+{
+	return myName;
 }
 
-void InOrderTraversal(BiTreeNode *T)
+const char* myID = "57017128";
+
+HomeWorkAPI const char* GetID()
 {
-	if(T!=NULL)
-	{
-		InOrderTraversal(T->lchild);
-		printf("%d",T->data);
-		printf("\n");
-		InOrderTraversal(T->rchild);
-		return;
-	}
-	else
-	{
-		return;
-	}
+	return myID;
 }
 
-void PostOrderTraversal(BiTreeNode *T)
+typedef struct StudentList
 {
-	if(T!=NULL)
-	{
-		PostOrderTraversal(T->lchild);
-		PostOrderTraversal(T->rchild);
-		printf("%d",T->data);
-		printf("\n");
-	}
-	else
-	{
-		return;
-	}
-}
+	struct StudentPtr* head;
+	int count;
+	int size;
+}StudentList;
+
+typedef struct StudentStack
+{
+	struct SeqStudentListByPtr students;
+	int size;
+}StudentStack;
+
+typedef struct StudentQueue
+{
+	struct StudentPtr* head;
+	struct StudentPtr* tail;
+	int count;
+	int size;
+}StudentQueue;
+
+struct StudentList g_StudentListMgr; 
+struct StudentStack g_StudentStackMgr;
+struct StudentQueue g_StudentQueueMgr;
 
 HuffmanTree* HuffmanDecode(int a[],int number)
 {
@@ -160,12 +161,325 @@ HuffmanTree* HuffmanDecode(int a[],int number)
 	return Treeptr;
 }
 
-void InputExampleFile(const char* filePath)
+/************************* 链表作业 ***********************/
+
+/*
+初始化一个动态链表，可以进行后续的增删改查操作
+*/
+extern struct StudentList g_StudentListMgr; 
+HomeWorkAPI bool InitializeDynamicList(unsigned short MaxListLength)
+{
+	g_StudentListMgr.head=NULL;
+	g_StudentListMgr.count=0;
+	g_StudentListMgr.size=(int)MaxListLength;
+	return true;
+}
+
+/*
+插入一个学生的信息，如果失败则返回false
+*/
+HomeWorkAPI bool InsertStudent(const char* name , const char* id , short score)
+{
+	if(g_StudentListMgr.count==g_StudentListMgr.size)
+	{
+		return false;
+	}
+	else
+	{
+		struct StudentPtr *tmpNode=(struct StudentPtr*)malloc(sizeof(struct StudentPtr));
+		if(tmpNode!=NULL)
+		{
+			strcpy_s((tmpNode->student).name,name);
+			strcpy_s((tmpNode->student).id,id);
+			(tmpNode->student).score=score;
+			tmpNode->NextAddr=g_StudentListMgr.head;
+			g_StudentListMgr.head=tmpNode;
+			g_StudentListMgr.count++;
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+}
+
+/*
+删除一个学生的信息，如果失败则返回false
+*/
+HomeWorkAPI bool RemoveStudent(const char* id)
+{
+	struct StudentPtr *tmpNode,*tmpPreNode;
+	tmpNode=tmpPreNode=g_StudentListMgr.head;
+	while(tmpNode!=NULL)
+	{
+		if(!strcmp((tmpNode->student).id,id))
+		{
+			break;
+		}
+		else
+		{
+			tmpPreNode=tmpNode;
+			tmpNode=tmpNode->NextAddr;
+		}
+	}
+	if(tmpNode==NULL)
+	{
+		return false;
+	}
+	if(tmpNode==tmpPreNode)
+	{
+		g_StudentListMgr.head=tmpNode->NextAddr;
+	}
+	else
+	{
+		tmpPreNode->NextAddr=tmpNode->NextAddr;
+	}
+	g_StudentListMgr.count--;
+	free(tmpNode);
+	return true;
+}
+
+/*
+获取学生的数量
+*/
+HomeWorkAPI unsigned short GetStudentCount()
+{
+	return g_StudentListMgr.count;
+}
+
+/*
+根据ID获取学生的成绩
+*/
+HomeWorkAPI bool GetScoreByID(const char* id , short* score)
+{
+	struct StudentPtr* tmpNode;
+	tmpNode=g_StudentListMgr.head;
+	while(tmpNode!=NULL)
+	{
+     if(!strcmp((tmpNode->student).id,id))
+	 {
+      (*score)=(tmpNode->student).score;
+	  return true;
+	 }
+	 tmpNode=tmpNode->NextAddr;
+	}
+    return false;
+}
+
+/*
+根据ID设置学生的成绩
+*/
+HomeWorkAPI bool SetScoreByID(const char* id , short score)
+{
+	struct StudentPtr* tmpNode;
+	tmpNode=g_StudentListMgr.head;
+	while(tmpNode!=NULL)
+	{
+		if(!strcmp((tmpNode->student).id,id))
+		{
+			(tmpNode->student).score=score;
+			return true;
+		}
+		tmpNode=tmpNode->NextAddr;
+	}
+	return false;
+}
+
+/*
+清除所有已经建立的结构，释放内存
+*/
+
+HomeWorkAPI bool FinalizeDynamicList()
+{
+  struct StudentPtr* tmpNode;
+  tmpNode=g_StudentListMgr.head;
+  while(tmpNode!=NULL)
+  {
+     g_StudentListMgr.head=g_StudentListMgr.head->NextAddr;
+	 free(tmpNode);
+	 tmpNode=g_StudentListMgr.head;
+  }
+  g_StudentListMgr.count=0;
+  g_StudentListMgr.size=0;
+  return true;
+}
+
+/***********************************************************/
+/*
+初始化一个栈，可以进行后续的增删改查操作
+*/
+HomeWorkAPI bool InitializeStack(unsigned short MaxLength)
+{
+	g_StudentStackMgr.size=MaxLength;
+	g_StudentStackMgr.students.student=(struct StudentNode *)malloc(MaxLength*sizeof(struct StudentNode));
+	g_StudentStackMgr.students.count=0;
+	if(g_StudentStackMgr.students.student==NULL)
+	{
+		return false;
+	}
+	return true;
+}
+
+/*
+压入一个学生的信息，如果失败则返回false
+*/
+HomeWorkAPI bool PushStudent(const char* name , const char* id , short score)
+{
+	if(g_StudentStackMgr.students.count==g_StudentStackMgr.size)
+	{
+		return false;
+	}
+	else
+	{
+		strcpy_s(g_StudentStackMgr.students.student[g_StudentStackMgr.students.count].id,id);
+		strcpy_s(g_StudentStackMgr.students.student[g_StudentStackMgr.students.count].name,name);
+		g_StudentStackMgr.students.student[g_StudentStackMgr.students.count].score=score;
+		g_StudentStackMgr.students.count++;
+		return true;
+	}
+}
+
+/*
+获取学生的数量
+*/
+HomeWorkAPI unsigned short GetStudentCountInStack()
+{
+	return g_StudentStackMgr.students.count;
+}
+
+/*
+弹出一个学生的信息，如果失败则返回false
+*/
+HomeWorkAPI bool PopStudent(char* name , char* id , short* score)
+{
+	if(g_StudentStackMgr.students.count==0)
+	{
+		return false;
+	}
+	strcpy_s(name,16,g_StudentStackMgr.students.student[g_StudentStackMgr.students.count-1].name);
+	strcpy_s(id,16,g_StudentStackMgr.students.student[g_StudentStackMgr.students.count-1].id);
+	*score=g_StudentStackMgr.students.student[g_StudentStackMgr.students.count-1].score;
+	g_StudentStackMgr.students.count--;
+	return true;
+}
+
+HomeWorkAPI bool FinalizeStack()
+{
+	free(g_StudentStackMgr.students.student);
+	g_StudentStackMgr.students.count=0;
+    g_StudentStackMgr.size=0;
+	g_StudentStackMgr.students.count=0;
+	return true;
+}
+
+
+/**********************************************************/
+
+
+
+/************************* 队列作业 ***********************/
+
+/*
+初始化一个队列，可以进行后续的增删改查操作
+*/
+HomeWorkAPI bool InitializeQueue(unsigned short MaxLength)
+{
+	g_StudentQueueMgr.head=g_StudentQueueMgr.tail=NULL;
+	g_StudentQueueMgr.count=0;
+	g_StudentQueueMgr.size=MaxLength;
+	return true;
+}
+
+/*
+压入一个学生的信息，如果失败则返回false
+*/
+HomeWorkAPI bool EnQueStudent(const char* name , const char* id , short score)
+{
+	if(g_StudentQueueMgr.count==g_StudentQueueMgr.size)
+	{
+		return false;
+	}
+	struct StudentPtr* tmpPtr;
+	tmpPtr=(struct StudentPtr*)malloc(sizeof(struct StudentPtr));
+	if(tmpPtr==NULL)
+	{
+		return false;
+	}
+	strcpy_s(tmpPtr->student.id,id);
+	strcpy_s(tmpPtr->student.name,name);
+	tmpPtr->student.score=score;
+	if(g_StudentQueueMgr.head==NULL)
+	{
+		g_StudentQueueMgr.head=g_StudentQueueMgr.tail=tmpPtr;
+	}
+	else
+	{
+		g_StudentQueueMgr.head->NextAddr=tmpPtr;
+		g_StudentQueueMgr.head=tmpPtr;
+	}
+	g_StudentQueueMgr.count++;
+	return true;
+}
+
+/*
+获取学生的数量
+*/
+HomeWorkAPI unsigned short GetStudentCountInQueue()
+{
+	return g_StudentQueueMgr.count;
+}
+
+/*
+弹出一个学生的信息，如果失败则返回false
+*/
+HomeWorkAPI bool DeQueStudent(char* name , char* id , short* score)
+{
+	if(g_StudentQueueMgr.count==0)
+	{
+		return false;
+	}
+	StudentPtr* tmpPtr;
+	strcpy_s(name,16,g_StudentQueueMgr.tail->student.name);
+	strcpy_s(id,16,g_StudentQueueMgr.tail->student.id);
+	*score=g_StudentQueueMgr.tail->student.score;
+	tmpPtr=g_StudentQueueMgr.tail->NextAddr;
+	free(g_StudentQueueMgr.tail);
+	g_StudentQueueMgr.tail=tmpPtr;
+	g_StudentQueueMgr.count--;
+	return true;
+}
+
+HomeWorkAPI bool FinalizeQueue()
+{
+	StudentPtr* tmpPtr;
+	while(g_StudentQueueMgr.count!=0)
+	{
+		tmpPtr=g_StudentQueueMgr.tail->NextAddr;
+		free(g_StudentQueueMgr.tail);
+		g_StudentQueueMgr.tail=tmpPtr;
+		g_StudentQueueMgr.count--;
+	}
+	g_StudentQueueMgr.head=g_StudentQueueMgr.tail=NULL;
+	g_StudentQueueMgr.size=0;
+	return true;
+}
+
+/**********************************************************/
+
+
+/************************* 哈夫曼编码作业 ***********************/
+/*
+根据输入的路径名读取一个样本文件中的内容，并对其中所有字符的出现次数
+进行计数，随后需要计算出每一个字母的出现概率
+内部选择怎样的数据结构来维护每一个出现的字符的出现概率可以自行决定
+*/
+HomeWorkAPI void InputExampleFile(const char* filePath)
 {
 	FILE *fp=NULL;
 	char *buf;
 	buf=(char *)malloc(1000*sizeof(char));
-	fp=fopen(filePath,"r");
+	fopen_s(&fp,filePath,"r");
 	if(fp==NULL)
 	{
 		printf("failed to open");
@@ -206,7 +520,6 @@ void InputExampleFile(const char* filePath)
 	{
 		g_FileStringmgr.Character[count]=tmp[count];
 	}
-	g_FileStringmgr.Character[g_FileStringmgr.Type]=0;
 	free(tmp);
 	g_FileStringmgr.Frequency=(int*)malloc(sizeof(int)*g_FileStringmgr.Type);
 	for(int count=0;count<g_FileStringmgr.Type;count++)
@@ -220,148 +533,123 @@ void InputExampleFile(const char* filePath)
 			}
 		}
 	}
-    g_FileStringmgr.Tree=HuffmanDecode(g_FileStringmgr.Frequency,g_FileStringmgr.Type);
+	g_FileStringmgr.Tree=HuffmanDecode(g_FileStringmgr.Frequency,g_FileStringmgr.Type);
 	return;
 }
 
-void InitStack(Stack &S)
+/*
+获取当前已经分析的样本文件中字符的种类
+*/
+HomeWorkAPI int GetInputCharCount()
 {
-	S.top=NULL;
-	return;
-}
-void push(Stack &S,BiTreeNode *ptr)
-{
-	if(S.top==NULL)
-	{
-		S.top=(PtrNode*)malloc(sizeof(PtrNode));
-		S.top->treeptr=ptr;
-		S.top->next=NULL;
-		return;
-	}
-	else
-	{
-		PtrNode *tmp;
-		tmp=(PtrNode*)malloc(sizeof(PtrNode));
-		tmp->treeptr=ptr;
-		tmp->next=S.top;
-		S.top=tmp;
-		return;
-	}
+	return g_FileStringmgr.Type;
 }
 
-bool pop(Stack &S,BiTreeNode* &ptr)
+/*
+返回输入的字符的出现概率，如果没出现过则返回0
+*/
+HomeWorkAPI float GetRatioOfChar(char inputChar)
 {
-	if(S.top==NULL)
+	for(int count=0;count<g_FileStringmgr.Type;count++)
 	{
-		return false;
-	}
-	else
-	{
-		ptr=S.top->treeptr;
-		PtrNode *tmp;
-		tmp=S.top->next;
-		free(S.top);
-		S.top=tmp;
-		return true;
-	}
-}
-
-bool GetTop(Stack &S,BiTreeNode* &ptr)
-{
-	if(S.top==NULL)
-	{
-		return false;
-	}
-	else
-	{
-		ptr=S.top->treeptr;
-		return true;
-	}
-}
-
-void PreOrderTraversalByStack(BiTreeNode *root)
-{
-	Stack S;
-	InitStack(S);
-	push(S,root);
-	BiTreeNode *tmp=NULL;
-	tmp=(BiTreeNode *)malloc(sizeof(BiTreeNode));
-	while(S.top!=NULL)
-	{
-		pop(S,tmp);
-		cout<<tmp->data<<endl;
-		if(tmp->rchild!=NULL)
+		if(inputChar==g_FileStringmgr.Character[count])
 		{
-			push(S,tmp->rchild);
-		}
-		if(tmp->lchild!=NULL)
-		{
-			push(S,tmp->lchild);
+			return (float)(g_FileStringmgr.Frequency[count])/(float)(g_FileStringmgr.Number);
 		}
 	}
-	return;
+	return 0;
 }
 
-void InOrderTraversalByStack(BiTreeNode *root)
+/*
+获取一个输入字符的编码，codeBuf由调用者负责申请数组，同学们可以不用担心
+codeBuf中采用‘1’和‘0’进行编码
+如果输入的字符没有出现过，则返回false
+*/
+HomeWorkAPI bool GetCodeOfChar(char inputChar , char* codeBuf)
 {
-	Stack S;
-	InitStack(S);
-	BiTreeNode *tmp=NULL;
-	tmp=(BiTreeNode *)malloc(sizeof(BiTreeNode));
-	push(S,root);
-	while(S.top!=NULL)
+	for(int count=0;count<g_FileStringmgr.Type;count++)
 	{
-	while(GetTop(S,tmp)&&tmp->lchild!=NULL)
+		if(inputChar==g_FileStringmgr.Character[count])
+		{
+			strcpy_s(codeBuf,strlen(g_FileStringmgr.Tree->HuffmanCode[count]),g_FileStringmgr.Tree->HuffmanCode[count]);
+			return true;
+		}
+	}
+	return false;
+}
+/*
+对输入的文件中的内容计算编码长度，采用‘1’和‘0’进行编码
+返回总的编码长度，因为是练习题，所以编码长度远大于文件的长度，正常的
+*/
+HomeWorkAPI unsigned long GetCodeBufLength(const char* filePath)
+{
+	InputExampleFile(filePath);
+	unsigned long sum=0;
+	for(int count=0;count<g_FileStringmgr.Type;count++)
 	{
-		push(S,tmp->lchild);
+		sum+=strlen(g_FileStringmgr.Tree->HuffmanCode[count]);
 	}
-	pop(S,tmp);
-	cout<<tmp->data<<endl;
-	if(S.top==NULL)
+	return sum;
+}
+/*
+对输入的文件中的内容进行编码,codeBuf由调用者负责申请数组，同学们可以不用担心
+codeBuf中采用‘1’和‘0’进行编码
+*/
+HomeWorkAPI unsigned long Encode(const char* filePath , char* codeBuf)
+{
+	int pos=0;
+	int charactersearch;
+	InputExampleFile(filePath);
+	for(int count=0;count<g_FileStringmgr.Number;count++)
 	{
-		break;
+		for(charactersearch=0;g_FileStringmgr.Filestring[count]!=g_FileStringmgr.Character[charactersearch];charactersearch++);
+		for(unsigned int codecount=0;codecount<strlen(g_FileStringmgr.Tree->HuffmanCode[charactersearch]);codecount++)
+		{
+			codeBuf[pos++]=g_FileStringmgr.Tree->HuffmanCode[charactersearch][codecount];
+		}
 	}
-	while(tmp->rchild==NULL)
-	{
-		pop(S,tmp);
-		cout<<tmp->data<<endl;
-	}
-	push(S,tmp->rchild);
-	}
+	codeBuf[pos]=0;
+	return 0;
 }
 
-void PostOrderTraversalByStack(BiTreeNode *root)
+/*
+使用输入的codeBuf（外部已经进行了内存分配）中的编码，采用你的编码方案还原成字符，
+写入到filePath指定的文件中，其中codeBuf中的有效长度由length设定
+*/
+HomeWorkAPI bool Decode(const char* filePath , char* codeBuf , unsigned long length)
 {
-	Stack(S);
-	InitStack(S);
-	BiTreeNode *tmp;
-	tmp=(BiTreeNode *)(malloc(sizeof(BiTreeNode)));
-	push(S,root);
-	while(S.top!=NULL)
+	unsigned long pos=0;
+	char a[200];
+	int charcount=0;
+	while(pos<length)
 	{
-		while(GetTop(S,tmp)&&(tmp->lchild)!=NULL)
+		for(int count=0;count<g_FileStringmgr.Type;count++)
 		{
-			push(S,tmp->lchild);
-		}
-		if(tmp->rchild!=NULL)
-		{
-			push(S,tmp->rchild);
-			continue;
-		}
-		else
-		{
-			pop(S,tmp);
-			cout<<tmp->data<<endl;
-			while((tmp==(tmp->parent)->rchild)||((tmp==(tmp->parent)->lchild)&&(tmp->parent)->rchild==NULL))
+			if(!strncmp(&(codeBuf[pos]),g_FileStringmgr.Tree->HuffmanCode[count],strlen(g_FileStringmgr.Tree->HuffmanCode[count])))
 			{
-				pop(S,tmp);
-				cout<<tmp->data<<endl;
-				if(S.top==NULL)
-				{
-					return;
-				}
+				a[charcount++]=g_FileStringmgr.Character[count];
+				pos+=strlen(g_FileStringmgr.Tree->HuffmanCode[count]);
+				break;
 			}
-			push(S,(tmp->parent)->rchild);
+			if(count==g_FileStringmgr.Type-1)
+			{
+				return false;
+			}
 		}
 	}
+	a[charcount]=0;
+	char *string;
+	string=(char *)malloc((charcount+1)*sizeof(char));
+	strcpy_s(string,charcount+1,a);
+	FILE *fp=NULL;
+	fopen_s(&fp,filePath,"w");
+	if(fp==NULL)
+	{
+		return false;
+	}
+	else
+	{
+		fputs(string,fp);
+	}
+	return true;
 }
