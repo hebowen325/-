@@ -653,3 +653,70 @@ HomeWorkAPI bool Decode(const char* filePath , char* codeBuf , unsigned long len
 	}
 	return true;
 }
+
+typedef struct ThreadBiNodeTree
+{
+	char data;
+	ThreadBiNodeTree *lchild;
+	ThreadBiNodeTree *rchild;
+	bool l_flag;
+	bool r_flag;
+}ThreadBiNodeTree;
+
+ThreadBiNodeTree *pre=NULL;
+void MidThreadingTraverse(ThreadBiNodeTree *T)
+{
+	if(pre!=NULL&&pre->rchild==NULL)
+	{
+		pre->r_flag=true;
+		pre->rchild=T;
+	}
+	if(T->lchild==NULL)
+	{
+		T->l_flag=true;
+		T->lchild=pre;
+		pre=T;
+	}
+	else
+	{
+		if(T->l_flag==false)
+		{
+		pre=T;
+		MidThreadingTraverse(T->lchild);
+		}
+	}
+	if(T->rchild!=NULL&&T->r_flag==false)
+	{
+		MidThreadingTraverse(T->rchild);
+	}
+}
+
+int main()
+{
+	ThreadBiNodeTree *Treeptr;
+	Treeptr=(ThreadBiNodeTree *)malloc(5*sizeof(ThreadBiNodeTree));
+	Treeptr[0].data='A';
+	Treeptr[0].l_flag=Treeptr[0].r_flag=false;
+	Treeptr[0].lchild=&Treeptr[1];
+	Treeptr[0].rchild=&Treeptr[3];
+	Treeptr[1].data='B';
+    Treeptr[1].l_flag=Treeptr[1].r_flag=false;
+	Treeptr[1].lchild=NULL;
+	Treeptr[1].rchild=&Treeptr[2];
+	Treeptr[2].data='D';
+	Treeptr[2].l_flag=Treeptr[2].r_flag=false;
+	Treeptr[2].lchild=NULL;
+	Treeptr[2].rchild=NULL;
+	Treeptr[3].data='C';
+	Treeptr[3].l_flag=Treeptr[3].r_flag=false;
+	Treeptr[3].lchild=&Treeptr[4];
+	Treeptr[3].rchild=NULL;
+	Treeptr[4].data='E';
+	Treeptr[4].l_flag=Treeptr[4].r_flag=false;
+	Treeptr[4].lchild=NULL;
+	Treeptr[4].rchild=NULL;
+	ThreadBiNodeTree *ptr;
+	ptr=&Treeptr[0];
+	MidThreadingTraverse(&Treeptr[0]);
+	return 0;
+}//中序线索二叉树的遍历与构造。
