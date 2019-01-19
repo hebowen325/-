@@ -1,0 +1,429 @@
+typedef struct BTree
+{
+	BTreeNode *Head;
+}BTree;
+typedef struct BPTreeNode
+{
+	int Data[M];
+	BPTreeNode* Node[M];
+	int KeyNum;
+	BPTreeNode* Parent;
+}BPTreeNode;
+
+typedef struct BPTree
+{
+	BPTreeNode *head;
+}BPTree;
+
+typedef struct QueueNode
+{
+	BPTreeNode *ptr;
+	QueueNode *next;
+}QueueNode;
+
+typedef struct QueueForBPTree
+{
+	QueueNode *Front;
+	QueueNode *Rear;
+}QueueForBPTree;
+
+BPTree *BPTreemgr;
+
+QueueForBPTree *QueueBP;
+
+void InsertBPTreeNode(int);
+void QKSort(int Data[],int First,int Last)
+{
+	int Axis;
+	Axis=Data[First];
+	int Firstcount=First;
+	int Lastcount=Last;
+	while(Firstcount<Lastcount)
+	{
+		while(Data[Lastcount]>=Axis&&Firstcount<Lastcount)
+		{
+			Lastcount--;
+		}
+		Data[Firstcount]=Data[Lastcount];
+		while(Data[Firstcount]<=Axis&&Firstcount<Lastcount)
+		{
+			Firstcount++;
+		}		
+		Data[Lastcount]=Data[Firstcount];
+	}
+	Data[Firstcount]=Axis;
+	if(Last-First<=1)
+	{
+		return ;
+	}
+	else
+	{
+		if(Firstcount-First>1)
+		{
+		QKSort(Data,First,Firstcount-1);
+		}
+		if(Last-Firstcount>1)
+		{
+		QKSort(Data,Firstcount+1,Last);
+		}
+	}
+}
+bool InitializeBPTree()
+{
+	BPTreemgr=(BPTree*)malloc(sizeof(BPTree));
+	if(BPTreemgr==NULL)
+	{
+		return false;
+	}
+	else
+	{
+		BPTreemgr->head=NULL;
+		return true;
+	}
+}
+
+bool FiveToFiveSplitBPTree(BPTreeNode *ptr)
+{
+	int order;
+	int count;
+	BPTreeNode *Parentptr;
+	Parentptr=ptr->Parent;
+	for(order=0;ptr!=Parentptr->Node[order];order++);
+	if(order==M-1)
+	{
+		return false;
+	}
+	if(Parentptr->Node[order+1]->KeyNum==M)
+	{
+		if(FiveToFiveSplitBPTree(Parentptr->Node[order+1])==false)
+		{
+			return false;
+		}
+	}
+	BPTreeNode *BrotherNode;
+	BrotherNode=Parentptr->Node[order+1];
+	for(count=BrotherNode->KeyNum;count>0;count--)
+	{
+		BrotherNode->Node[count]=BrotherNode->Node[count-1];
+		BrotherNode->Data[count]=BrotherNode->Data[count-1];
+	}
+	BrotherNode->Data[0]=ptr->Data[M-1];
+	BrotherNode->Node[0]=ptr->Node[M-1];
+	ptr->Node[M-1]=NULL;
+	if(BrotherNode->Node[0]!=NULL)
+	{
+		BrotherNode->Node[0]->Parent=BrotherNode->Node[0];
+	}
+	BrotherNode->KeyNum++;
+	Parentptr->Data[order+1]=BrotherNode->Data[0];
+	ptr->KeyNum--;
+	return true;
+}
+void SplitBPTree(BPTreeNode *ptr,int Data)
+{
+	int count;
+	int secondcount;
+	if(ptr==BPTreemgr->head)
+	{
+		if(ptr->Node[0]==NULL)
+		{
+			int data[M+1];
+			data[0]=Data;
+			for(count=1;count<M+1;count++)
+			{
+				data[count]=ptr->Data[count-1];
+			}
+			QKSort(data,0,M);
+			for(count=0;count<M;count++)
+			{
+				ptr->Node[count]=(BPTreeNode *)malloc(sizeof(BPTreeNode));
+				for(secondcount=0;secondcount<M;secondcount++)
+				{
+					ptr->Node[count]->Node[secondcount]=NULL;
+				}
+				ptr->Node[count]->Parent=ptr;
+				ptr->Node[count]->KeyNum=0;
+			}
+			for(count=0;count<M-1;count++)
+			{
+				ptr->Node[0]->Data[ptr->Node[0]->KeyNum++]=data[count];
+			}
+			ptr->Data[0]=data[0];
+			ptr->Data[1]=data[M-1];
+			ptr->KeyNum=2;
+			ptr->Node[1]->Data[0]=data[M-1];
+			ptr->Node[1]->Data[1]=data[M];
+			ptr->Node[1]->KeyNum=2;
+			return;
+		}
+		else
+		{
+			int count;
+			BPTreeNode *head;
+			head=(BPTreeNode *)malloc(sizeof(BPTreeNode));
+			head->Data[0]=BPTreemgr->head->Data[0];
+			head->Node[0]=BPTreemgr->head;
+			head->Node[0]->Parent=head;
+			for(count=2;count<M;count++)
+			{
+				head->Node[count]=NULL;
+			}
+			head->Node[1]=(BPTreeNode *)malloc(sizeof(BPTreeNode));
+			head->Node[1]->Parent=head;
+			head->KeyNum=2;
+			head->Parent=NULL;
+			head->Data[1]=BPTreemgr->head->Data[M-1];
+			head->Node[1]->Node[0]=BPTreemgr->head->Node[M-1];
+			head->Node[1]->Node[0]->Parent=head->Node[1];
+			head->Node[1]->Data[0]=head->Data[1];
+			head->Node[1]->KeyNum=1;
+			head->Node[0]->KeyNum--;
+			head->Node[0]->Node[M-1]=NULL;
+			for(count=1;count<M;count++)
+			{
+				head->Node[1]->Node[count]=NULL;
+			}
+			BPTreemgr->head=head;
+			InsertBPTreeNode(Data);
+		}
+	}
+	else
+	{
+		while(ptr->Parent->KeyNum==M)
+		{
+			SplitBPTree(ptr->Parent,Data);
+		}
+		int order;
+		for(order=0;ptr!=ptr->Parent->Node[order];order++);
+		for(count=ptr->Parent->KeyNum;count>order+1;count--)
+		{
+			ptr->Parent->Node[count]=ptr->Parent->Node[count-1];
+			ptr->Parent->Data[count]=ptr->Parent->Data[count-1];
+		}
+		ptr->Parent->Node[order+1]=(BPTreeNode *)malloc(sizeof(BPTreeNode));
+		ptr->Parent->Node[order+1]->Parent=ptr->Parent;
+		for(count=0;count<M;count++)
+		{
+			ptr->Parent->Node[order+1]->Node[count]=NULL;
+		}
+		ptr->Parent->Data[order+1]=ptr->Data[M-1];
+		ptr->Parent->Node[order+1]->Data[0]=ptr->Data[M-1];
+		ptr->KeyNum--;
+		ptr->Parent->KeyNum++;
+		if(ptr->Node[M-1]!=NULL)
+		{
+			ptr->Parent->Node[order+1]->Node[0]=ptr->Node[M-1];
+			ptr->Parent->Node[order+1]->Node[0]->Parent=ptr->Parent->Node[order+1];
+		}
+		ptr->Parent->Node[order+1]->KeyNum=1;
+		InsertBPTreeNode(Data);
+		return;
+	}
+}
+void InsertBPTreeNode(int Data)
+{
+	int count;
+	BPTreeNode* ptr;
+	ptr=BPTreemgr->head;
+	if(ptr==NULL)
+	{
+		BPTreemgr->head=(BPTreeNode *)malloc(sizeof(BPTreeNode));
+		BPTreemgr->head->Parent=NULL;
+		for(count=0;count<M;count++)
+		{
+			BPTreemgr->head->Node[count]=NULL;
+		}
+		BPTreemgr->head->Data[0]=Data;
+		BPTreemgr->head->KeyNum=1;
+		return ;
+	}
+	else
+	{
+		while(ptr->Node[0]!=NULL)
+		{
+			for(count=0;count<ptr->KeyNum;count++)
+			{
+				if(Data==ptr->Data[count])
+				{
+					return ;
+				}
+			}
+			if(Data<ptr->Data[0])
+			{
+				ptr=ptr->Node[0];
+				break;
+			}
+			for(count=0;count<ptr->KeyNum-1;count++)
+			{
+				if(Data>ptr->Data[count]&&Data<ptr->Data[count+1])
+				{
+					ptr=ptr->Node[count];
+					break;
+				}
+			}
+			if(ptr->Node[0]==NULL)
+			{
+				break;
+			}
+			if(Data>ptr->Data[ptr->KeyNum-1])
+			{
+				ptr=ptr->Node[ptr->KeyNum-1];
+				break;
+			}
+		}
+	}
+	if(ptr->KeyNum<M)
+	{
+		ptr->Data[ptr->KeyNum++]=Data;
+		QKSort(ptr->Data,0,ptr->KeyNum-1);
+		if(Data==ptr->Data[0]&&ptr!=BPTreemgr->head)
+		{
+			for(count=0;;count++)
+			{
+				if(ptr==ptr->Parent->Node[count])
+				{
+					break;
+				}
+			}
+			ptr->Parent->Data[count]=Data;
+		}
+		ptr=ptr->Parent;
+		while(ptr!=NULL&&ptr->Parent!=NULL&&ptr==ptr->Parent->Node[0]&&ptr!=BPTreemgr->head)
+		{
+			ptr->Parent->Data[0]=ptr->Data[0];
+			ptr=ptr->Parent;
+		}
+		return;
+	}
+	if(ptr->KeyNum==M)
+	{
+		if(ptr==BPTreemgr->head||ptr->Parent->KeyNum<M)
+		{
+			SplitBPTree(ptr,Data);
+		}
+		else
+		{
+			if(FiveToFiveSplitBPTree(ptr)==false)
+			{
+				SplitBPTree(ptr->Parent,Data);
+			}
+			else
+			{
+				InsertBPTreeNode(Data);
+			}
+		}
+	}
+}
+
+void InitializeQueueBP()
+{
+	QueueBP=(QueueForBPTree *)malloc(sizeof(QueueForBPTree));
+	QueueBP->Front=NULL;
+	QueueBP->Rear=NULL;
+}
+
+void PushQueue(BPTreeNode *ptr)
+{
+	QueueNode *Ptr;
+	Ptr=(QueueNode*)malloc(sizeof(QueueNode));
+	Ptr->ptr=ptr;
+	Ptr->next=NULL;
+	if(QueueBP->Front==NULL&&QueueBP->Rear==NULL)
+	{
+		QueueBP->Front=QueueBP->Rear=Ptr;
+	}
+	else
+	{
+		QueueBP->Front->next=Ptr;
+		QueueBP->Front=Ptr;
+	}
+}
+
+bool PopQueue(BPTreeNode *ptr)
+{
+	if(QueueBP->Rear==QueueBP->Front)
+	{
+		if(QueueBP->Front==NULL)
+		{
+			return  false;
+		}
+		else
+		{
+			QueueNode *Ptr;
+			Ptr=QueueBP->Rear;
+			ptr->KeyNum=Ptr->ptr->KeyNum;
+			ptr->Parent=Ptr->ptr->Parent;
+			for(int i=0;i<Ptr->ptr->KeyNum;i++)
+			{
+				ptr->Data[i]=Ptr->ptr->Data[i];
+				ptr->Node[i]=Ptr->ptr->Node[i];	
+			}
+			QueueBP->Rear=Ptr->next;
+			free(Ptr);
+			QueueBP->Rear=QueueBP->Front=NULL;
+			return true;
+		}
+	}
+	else
+	{
+		QueueNode *Ptr;
+		Ptr=QueueBP->Rear;
+		ptr->KeyNum=Ptr->ptr->KeyNum;
+		ptr->Parent=Ptr->ptr->Parent;
+		for(int i=0;i<Ptr->ptr->KeyNum;i++)
+		{
+			ptr->Data[i]=Ptr->ptr->Data[i];
+			ptr->Node[i]=Ptr->ptr->Node[i];	
+		}
+		QueueBP->Rear=Ptr->next;
+		free(Ptr);
+		return true;
+	}
+}
+
+BTree *BTreemgr;
+struct StudentList g_StudentListMgr; 
+struct StudentStack g_StudentStackMgr;
+struct StudentQueue g_StudentQueueMgr;
+
+bool  FiveToFiveSplit(BTreeNode *ptr)
+{
+	int count;
+	int order;
+	order=0;
+	BTreeNode *ParentNode;
+	BTreeNode *BrotherNode;
+	while(ptr->ParentNode->Node[order]!=ptr)
+	{
+		order++;
+	}
+	if(order==M)
+	{
+		return false;
+	}
+	ParentNode=ptr->ParentNode;
+	if(ParentNode->Node[order+1]->KeyNum==M)
+	{
+		if(FiveToFiveSplit(ParentNode->Node[order+1])==false)
+		{
+			return false;	
+		}
+	}
+	BrotherNode=ParentNode->Node[order+1];
+	for(count=BrotherNode->KeyNum-1;count>=0;count--)
+	{
+		BrotherNode->Data[count+1]=BrotherNode->Data[count];
+		BrotherNode->Node[count+1+1]=BrotherNode->Node[count+1];
+	}
+	BrotherNode->Node[1]=BrotherNode->Node[0];
+	BrotherNode->Data[0]=ParentNode->Data[order];
+	BrotherNode->Node[0]=ptr->Node[M];
+	if(BrotherNode->Node[0]!=NULL)
+	{
+	BrotherNode->Node[0]->ParentNode=BrotherNode;
+	}
+	ParentNode->Data[order]=ptr->Data[M-1];
+	BrotherNode->KeyNum++;
+	ptr->KeyNum--;
+	return true;
+}
