@@ -1,0 +1,402 @@
+typedef struct BTreeNode
+{
+	int KeyNum;
+	int Data[M];
+	BTreeNode *ParentNode;
+	BTreeNode *Node[M+1];
+}BTreeNode;
+
+typedef struct BTree
+{
+	BTreeNode *Head;
+}BTree;
+BTree *BTreemgr;
+struct StudentList g_StudentListMgr; 
+struct StudentStack g_StudentStackMgr;
+struct StudentQueue g_StudentQueueMgr;
+
+bool  FiveToFiveSplit(BTreeNode *ptr)
+{
+	int count;
+	int order;
+	order=0;
+	BTreeNode *ParentNode;
+	BTreeNode *BrotherNode;
+	while(ptr->ParentNode->Node[order]!=ptr)
+	{
+		order++;
+	}
+	if(order==M)
+	{
+		return false;
+	}
+	ParentNode=ptr->ParentNode;
+	if(ParentNode->Node[order+1]->KeyNum==M)
+	{
+		if(FiveToFiveSplit(ParentNode->Node[order+1])==false)
+		{
+			return false;	
+		}
+	}
+	BrotherNode=ParentNode->Node[order+1];
+	for(count=BrotherNode->KeyNum-1;count>=0;count--)
+	{
+		BrotherNode->Data[count+1]=BrotherNode->Data[count];
+		BrotherNode->Node[count+1+1]=BrotherNode->Node[count+1];
+	}
+	BrotherNode->Node[1]=BrotherNode->Node[0];
+	BrotherNode->Data[0]=ParentNode->Data[order];
+	BrotherNode->Node[0]=ptr->Node[M];
+	if(BrotherNode->Node[0]!=NULL)
+	{
+	BrotherNode->Node[0]->ParentNode=BrotherNode;
+	}
+	ParentNode->Data[order]=ptr->Data[M-1];
+	BrotherNode->KeyNum++;
+	ptr->KeyNum--;
+	return true;
+}
+bool InsertBTreeNode(int data);
+void SortByInsert(int Array[],int Num,int data)
+{
+	int count;
+	for(count=Num-1;count>=0;count--)
+	{
+		if(Array[count]==data)
+		{
+			return;
+		}
+		if(Array[count]<data)
+		{
+			break;
+		}
+		if(Array[count]>data)
+		{
+			Array[count+1]=Array[count];
+		}
+	}
+	Array[count+1]=data;
+}
+
+void SplitBTree(BTreeNode *ptr,int data)
+{
+	int count;
+	if(ptr==BTreemgr->Head)
+	{
+		if(ptr->Node[0]==NULL)
+		{
+		BTreeNode *Child1,*Child2;
+		Child1=(BTreeNode *)malloc(sizeof(BTreeNode));
+		Child2=(BTreeNode *)malloc(sizeof(BTreeNode));
+		for(count=2;count<M+1;count++)
+		{
+			BTreeNode *Child;
+			Child=(BTreeNode *)malloc(sizeof(BTreeNode));
+			Child->KeyNum=0;
+			int count2;
+			for(count2=0;count2<M+1;count2++)
+			{
+				Child->Node[count2]=NULL;
+			}
+			Child->ParentNode=ptr;
+			ptr->Node[count]=Child;
+		}
+		for(count=0;count<M+1;count++)
+		{
+			Child1->Node[count]=NULL;
+			Child2->Node[count]=NULL;
+		}
+		Child1->KeyNum=ptr->KeyNum/2;
+		Child2->KeyNum=ptr->KeyNum-ptr->KeyNum/2-1;
+		for(count=0;count<Child1->KeyNum;count++)
+		{
+			Child1->Data[count]=ptr->Data[count];
+		}
+		for(count=0;count<Child2->KeyNum;count++)
+		{
+			Child2->Data[count]=ptr->Data[ptr->KeyNum/2+count+1];
+		}
+		ptr->Data[0]=ptr->Data[ptr->KeyNum/2];
+		ptr->KeyNum=1;
+		ptr->Node[0]=Child1;
+		ptr->Node[1]=Child2;
+		Child1->ParentNode=ptr;
+		Child2->ParentNode=ptr;
+		InsertBTreeNode(data);
+		return ;
+		}
+		else
+		{
+			BTreeNode * Head;
+			Head=(BTreeNode *)malloc(sizeof(BTreeNode));
+			Head->Data[0]=BTreemgr->Head->Data[M-1];
+			Head->Node[0]=BTreemgr->Head;
+			for(count=2;count<M+1;count++)
+			{
+				Head->Node[count]=(BTreeNode *)malloc(sizeof(BTreeNode));
+				Head->Node[count]->ParentNode=Head;
+				Head->Node[count]->KeyNum=0;
+				for(int i=0;i<M+1;i++)
+				{
+					Head->Node[count]->Node[i]=NULL;
+				}
+			}
+			BTreemgr->Head->KeyNum--;
+			BTreemgr->Head->ParentNode=Head;
+			BTreeNode *BrotherNode,*SonNode;
+			BrotherNode=(BTreeNode *)malloc(sizeof(BTreeNode));
+			SonNode=(BTreeNode *)malloc(sizeof(BTreeNode));
+			BrotherNode->Data[0]=BTreemgr->Head->Node[M]->Data[M-2];
+			BrotherNode->ParentNode=Head;
+			Head->KeyNum=1;
+			Head->ParentNode=NULL;
+			Head->Node[1]=BrotherNode;
+			BrotherNode->KeyNum=1;
+			for(count=0,SonNode->KeyNum=0;count<M-2;count++)
+			{
+				SonNode->Data[count]=BTreemgr->Head->Node[M]->Data[count];
+				SonNode->Node[count]=BTreemgr->Head->Node[M]->Node[count];
+				if(SonNode->Node[count]!=NULL)
+				{
+				SonNode->Node[count]->ParentNode=SonNode;
+				}
+				SonNode->KeyNum++;
+			}
+			for(count=SonNode->KeyNum+1;count<M+1;count++)
+			{
+				SonNode->Node[count]=NULL;
+			}
+			SonNode->Node[SonNode->KeyNum]=BTreemgr->Head->Node[M]->Node[SonNode->KeyNum];
+			if(SonNode->Node[SonNode->KeyNum]!=NULL)
+			{
+			SonNode->Node[SonNode->KeyNum]->ParentNode=SonNode;
+			}
+			BrotherNode->Node[0]=SonNode;
+			SonNode->ParentNode=BrotherNode;
+			BTreeNode *DaughterNode;
+			DaughterNode=(BTreeNode *)malloc(sizeof(BTreeNode));
+			DaughterNode->Data[0]=BTreemgr->Head->Node[M]->Data[M-1];
+			DaughterNode->Node[0]=BTreemgr->Head->Node[M]->Node[M-1];
+			DaughterNode->Node[1]=BTreemgr->Head->Node[M]->Node[M];
+			if(DaughterNode->Node[0]!=NULL)
+			{
+			DaughterNode->Node[0]->ParentNode=DaughterNode;
+			}
+			if(DaughterNode->Node[1]!=NULL)
+			{
+			DaughterNode->Node[1]->ParentNode=DaughterNode;
+			}
+			DaughterNode->KeyNum=1;
+			DaughterNode->ParentNode=BrotherNode;
+			BrotherNode->Node[1]=DaughterNode;
+			BTreemgr->Head=Head;
+			Head->Node[0]->Node[M]->KeyNum=0;
+			for(count=2;count<M+1;count++)
+			{
+				Head->Node[1]->Node[1]->Node[count]=NULL;
+			}
+			return;
+		}
+	}
+	if(ptr->ParentNode->KeyNum<M)
+	{
+		BTreeNode *Parentptr;
+		int numbercount=0;
+		Parentptr=ptr->ParentNode;		
+		for(;ptr!=Parentptr->Node[numbercount];numbercount++);
+		ptr=Parentptr;
+		for(count=ptr->KeyNum;count>numbercount+1;count--)
+		{ 
+			ptr->Node[count+1]=ptr->Node[count];
+			ptr->Data[count]=ptr->Data[count-1];
+		}
+		if(numbercount+2<M+1)
+		{
+			ptr->Node[numbercount+2]=ptr->Node[numbercount+1];
+		}
+		ptr->Node[numbercount+1]=(BTreeNode *)malloc(sizeof(BTreeNode));
+		ptr->Node[numbercount+1]->ParentNode=ptr;
+		if(numbercount+1<M)
+		{
+			ptr->Data[numbercount+1]=ptr->Data[numbercount];
+		}
+		ptr->Node[numbercount+1]->KeyNum=1;
+		ptr->Node[numbercount+1]->Data[0]=ptr->Node[numbercount]->Data[M-1];
+		ptr->Node[numbercount+1]->Node[1]=ptr->Node[numbercount]->Node[M];
+		ptr->Node[numbercount+1]->Node[0]=ptr->Node[numbercount]->Node[M-1];
+		if(ptr->Node[numbercount+1]->Node[1]!=NULL)
+		{
+			ptr->Node[numbercount+1]->Node[1]->ParentNode=ptr->Node[numbercount+1];
+		}
+		if(ptr->Node[numbercount+1]->Node[0]!=NULL)
+		{
+			ptr->Node[numbercount+1]->Node[0]->ParentNode=ptr->Node[numbercount+1];
+		}
+		ptr->KeyNum++;
+		for(count=2;count<M+1;count++)
+		{
+			ptr->Node[numbercount+1]->Node[count]=NULL;
+		}
+		ptr->Data[numbercount]=ptr->Node[numbercount]->Data[M-2];
+		ptr->Node[numbercount]->KeyNum=ptr->Node[numbercount]->KeyNum-2;
+		InsertBTreeNode(data);
+		return;
+	}
+	if(ptr->ParentNode->KeyNum==M)
+	{
+		if(FiveToFiveSplit(ptr)==false)
+		{
+			SplitBTree(ptr->ParentNode,data);
+		}
+		else
+		{
+			InsertBTreeNode(data);
+		}
+	}
+}
+bool InitializeBTree()
+{
+	BTreemgr=(BTree *)malloc(sizeof(BTree));
+	BTreemgr->Head=NULL;
+	if(BTreemgr==NULL)
+	{
+		return false;
+	}
+	else
+	{
+		return true;
+	}
+}
+
+bool InsertBTreeNode(int data)
+{
+	int count;
+	BTreeNode *ptr=BTreemgr->Head;
+	if(BTreemgr->Head==NULL)
+	{
+		BTreemgr->Head=(BTreeNode *)malloc(sizeof(BTreeNode));
+		BTreemgr->Head->KeyNum=0;
+		BTreemgr->Head->Data[BTreemgr->Head->KeyNum++]=data;
+		BTreemgr->Head->ParentNode=NULL;
+		for(count=0;count<M;count++)
+		{
+			BTreemgr->Head->Node[count]=NULL;
+		}
+		return true;
+	}
+	while(ptr->Node[0]!=NULL)
+	{
+		for(count=0;count<ptr->KeyNum;count++)
+		{
+			if(data==ptr->Data[count])
+			{
+				return false;
+			}
+		}
+		if(data<ptr->Data[0])
+		{
+			ptr=ptr->Node[0];
+			continue;
+		}
+		if(data>ptr->Data[ptr->KeyNum-1])
+		{
+			ptr=ptr->Node[ptr->KeyNum];
+			continue;
+		}
+		for(count=0;count<ptr->KeyNum;count++)
+		{
+			if(data>ptr->Data[count]&&data<ptr->Data[count+1])
+			{
+				ptr=ptr->Node[count+1];
+				break;
+			}
+		}
+	}
+	if(ptr->KeyNum<M)
+	{
+		SortByInsert(ptr->Data,ptr->KeyNum++,data);
+		return true;
+	}
+	if(ptr->KeyNum==M)
+	{
+		SplitBTree(ptr,data);
+	}
+	return true;
+}
+HuffmanTree* HuffmanDecode(int a[],int number)
+{
+	HuffmanTree* Treeptr;
+	Treeptr=(HuffmanTree *)malloc(sizeof(HuffmanTree));
+	BiTreeNode **T1;
+	T1=(BiTreeNode **)malloc(number*sizeof(BiTreeNode));
+    BiTreeNode *TmpNode;
+	for(int firstcount=0;firstcount<number;firstcount++)
+	{
+		T1[firstcount]=(BiTreeNode *)malloc(sizeof(BiTreeNode));
+		T1[firstcount]->data=a[firstcount];
+		T1[firstcount]->lchild=NULL;
+		T1[firstcount]->rchild=NULL;
+		T1[firstcount]->parent=NULL;
+	}
+	Treeptr->leaves=(BiTreeNode **)malloc(number*sizeof(BiTreeNode));
+	for(int firstcount=0;firstcount<number;firstcount++)
+	{
+		Treeptr->leaves[firstcount]=T1[firstcount];
+	}
+	for(int count=0;count<number-1;count++)
+	{
+		for(int firstcount=count;firstcount<number;firstcount++)
+		{
+			for(int secondcount=number-1;secondcount>firstcount;secondcount--)
+			{
+				if(T1[secondcount-1]->data>T1[secondcount]->data)
+				{
+					BiTreeNode *tmpptr;
+					tmpptr=T1[secondcount-1];
+					T1[secondcount-1]=T1[secondcount];
+					T1[secondcount]=tmpptr;
+				}
+			}
+		}
+		TmpNode=(BiTreeNode *)malloc(sizeof(BiTreeNode));
+		TmpNode->data=T1[count]->data+T1[count+1]->data;
+		TmpNode->lchild=T1[count];
+		TmpNode->rchild=T1[count+1];
+		TmpNode->parent=NULL;
+		T1[count]->parent=T1[count+1]->parent=TmpNode;
+		T1[count]=NULL;
+		T1[count+1]=TmpNode;
+	}
+	free(T1);
+	Treeptr->root=TmpNode;
+	Treeptr->HuffmanCode=(char **)malloc(sizeof(char *)*number);
+	char*tmp;
+	tmp=(char*)malloc(sizeof(char)*200);
+	int codelength=0;
+	BiTreeNode *Tmpptr;
+	for(int count=0;count<number;count++)
+	{
+		Tmpptr=Treeptr->leaves[count];
+		while(Tmpptr!=Treeptr->root)
+		{
+			if(Tmpptr==(Tmpptr->parent)->lchild)
+			{
+				tmp[codelength++]='0';
+			}
+			if(Tmpptr==(Tmpptr->parent)->rchild)
+			{
+				tmp[codelength++]='1';
+			}
+			Tmpptr=Tmpptr->parent;
+		}
+		Treeptr->HuffmanCode[count]=(char*)malloc(sizeof(char)*(codelength+1));//每个编码最后一位置0
+        Treeptr->HuffmanCode[count][codelength]=0;
+		for(int codecount=0;codecount<codelength;codecount++)
+		{
+			Treeptr->HuffmanCode[count][codecount]=tmp[codelength-codecount-1];
+		}
+		codelength=0;
+	}
+	free(tmp);
+	return Treeptr;
+}
